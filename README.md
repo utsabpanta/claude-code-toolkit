@@ -59,7 +59,7 @@ Invoked with `/<name> [args]`. One-shot prompt templates for common requests. Se
 | [`/what-changed`](.claude/commands/what-changed.md) | Everyone | Summarize git changes since a ref or date |
 | [`/rubber-duck`](.claude/commands/rubber-duck.md) | Engineers | Help you think — without solving for you |
 
-### 🧠 14 skills — multi-step workflows invoked with `/<name>`
+### 🧠 19 skills — multi-step workflows invoked with `/<name>`
 
 | Slash command | For | What it does |
 |---|---|---|
@@ -71,6 +71,11 @@ Invoked with `/<name> [args]`. One-shot prompt templates for common requests. Se
 | [`/adr`](.claude/skills/adr/SKILL.md) | Engineers, architects | Architecture Decision Records with tradeoffs named |
 | [`/explain`](.claude/skills/explain/SKILL.md) | Engineers | Explains code at the user's level, not textbook-generic |
 | [`/onboard`](.claude/skills/onboard/SKILL.md) | New team members | Map a new codebase in an hour |
+| [`/migration-review`](.claude/skills/migration-review/SKILL.md) | Engineers | Checks a DB migration for lock risk, data loss, rollback safety |
+| [`/api-design`](.claude/skills/api-design/SKILL.md) | Engineers | Critiques a new endpoint — contract, errors, pagination, auth |
+| [`/refactor-plan`](.claude/skills/refactor-plan/SKILL.md) | Engineers | Breaks a big refactor into small, shippable steps |
+| [`/changelog`](.claude/skills/changelog/SKILL.md) | Engineers, PMs | Appends a Keep-a-Changelog entry from a commit range |
+| [`/dependency-check`](.claude/skills/dependency-check/SKILL.md) | Engineers | Evaluates a package before you add it — health, risk, alternatives |
 | [`/user-story`](.claude/skills/user-story/SKILL.md) | PMs | Well-formed stories with acceptance criteria |
 | [`/release-notes`](.claude/skills/release-notes/SKILL.md) | PMs, EMs | Customer-facing release notes from git commits |
 | [`/standup`](.claude/skills/standup/SKILL.md) | EMs, engineers | Standup notes from yesterday's git activity |
@@ -80,7 +85,7 @@ Invoked with `/<name> [args]`. One-shot prompt templates for common requests. Se
 
 👉 See [EXAMPLES.md](EXAMPLES.md#skills) for what each one actually produces.
 
-### 🤖 8 agents — specialists Claude can delegate to
+### 🤖 12 agents — specialists Claude can delegate to
 
 Agents have fresh context (no bias from the main conversation) and often restricted tools (a reviewer that can read but not write). Claude picks them automatically based on their `description`, or you can name them (`"use the security-auditor agent"`).
 
@@ -94,10 +99,14 @@ Agents have fresh context (no bias from the main conversation) and often restric
 | [`incident-commander`](.claude/agents/incident-commander.md) | You're in a live incident and need someone driving the loop |
 | [`onboarding-buddy`](.claude/agents/onboarding-buddy.md) | A new team member needs to get productive in a codebase |
 | [`performance-analyst`](.claude/agents/performance-analyst.md) | Something is slow — you want measurement, not speculation |
+| [`sql-reviewer`](.claude/agents/sql-reviewer.md) | Query plans, N+1s, missing indexes, and NULL-handling bugs |
+| [`a11y-auditor`](.claude/agents/a11y-auditor.md) | Reviewing frontend changes for real accessibility issues |
+| [`dockerfile-reviewer`](.claude/agents/dockerfile-reviewer.md) | Sanity-check a Dockerfile for security, size, and layer caching |
+| [`api-contract-guardian`](.claude/agents/api-contract-guardian.md) | Catch breaking API changes in a diff before they ship |
 
 👉 See [EXAMPLES.md](EXAMPLES.md#agents) for realistic exchanges.
 
-### 🪝 5 hooks — automation around Claude
+### 🪝 8 hooks — automation around Claude
 
 Run shell commands on Claude Code events. **Most people don't know this feature exists**; it's one of the most powerful things in the product. See **[HOOKS.md](HOOKS.md)** for the complete guide.
 
@@ -108,6 +117,9 @@ Run shell commands on Claude Code events. **Most people don't know this feature 
 | [`block-force-push.sh`](.claude/hooks/block-force-push.sh) | PreToolUse | Refuses `git push --force` without explicit opt-in |
 | [`session-summary.sh`](.claude/hooks/session-summary.sh) | Stop | Logs each session to `~/.claude/session.log` |
 | [`notify-on-idle.sh`](.claude/hooks/notify-on-idle.sh) | Notification | Desktop notification when Claude is waiting on you |
+| [`auto-gitignore.sh`](.claude/hooks/auto-gitignore.sh) | PostToolUse | Warns when Claude writes a sensitive-looking path not in `.gitignore` |
+| [`test-on-edit.sh`](.claude/hooks/test-on-edit.sh) | PostToolUse | Runs the nearest test file when Claude edits source — tight feedback loop |
+| [`pre-commit-lint.sh`](.claude/hooks/pre-commit-lint.sh) | PreToolUse | Lints staged files before Claude commits; blocks on errors |
 
 ### 🎭 4 output styles — swap Claude's voice per task
 
@@ -160,19 +172,19 @@ A vetted starting point — permission allowlist (read-only ops) + denylist (des
    ```
    Claude will pull your git activity and draft a standup note.
 
-4. **Try an output style:**
+5. **Try an output style:**
    - Run `/config`
    - Find "Output Style" in the settings menu
    - Pick `terse`
    - Every response is now short and direct.
 
-5. **Try an agent:**
+6. **Try an agent:**
    ```
    Use the code-reviewer agent to look at my staged changes.
    ```
    Claude spawns the agent with a fresh context for an independent review.
 
-6. **Optional: install a hook:**
+7. **Optional: install a hook:**
    ```bash
    ./install.sh --hooks
    ```
@@ -210,6 +222,7 @@ See [EXAMPLES.md](EXAMPLES.md) for longer walkthroughs.
 | [OUTPUT-STYLES.md](OUTPUT-STYLES.md) | How output styles work, how to switch, how to write your own |
 | [MCP.md](MCP.md) | Curated MCP server list with setup snippets |
 | [CLAUDE.md](CLAUDE.md) | Guidance Claude uses when modifying this repo itself |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | How to add a skill, agent, hook, or output style |
 | [settings.example.json](settings.example.json) | Template settings file |
 | [settings.example.README.md](settings.example.README.md) | What's in the settings example and why |
 
@@ -238,4 +251,4 @@ PRs welcome. If you've got a skill or agent that's served your team well, share 
 
 ## License
 
-MIT.
+MIT — see [LICENSE.md](LICENSE.md).

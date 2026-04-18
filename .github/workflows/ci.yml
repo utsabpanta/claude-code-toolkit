@@ -1,0 +1,102 @@
+name: CI
+
+# Quoted intentionally: bare `on` is parsed as YAML boolean `true` in YAML 1.1
+# and would cause this workflow to silently never trigger.
+"on":
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    name: Validate structure and content
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck jq
+          npm install -y -g markdownlint-cli2 || true
+
+      - name: Shell scripts are executable and pass shellcheck
+        run: |
+          fail=0
+          for f in .claude/hooks/*.sh install.sh; do
+            [ -f "$f" ] || continue
+            if [ ! -x "$f" ]; then
+              echo "::error file=$f::Shell script is not executable (chmod +x)"
+              fail=1
+            fi
+            if ! shellcheck -S warning "$f"; then
+              echo "::error file=$f::shellcheck reported issues"
+              fail=1
+            fi
+          done
+          exit $fail
+
+      - name: Skills have required frontmatter
+        run: |
+          fail=0
+          for f in .claude/skills/*/SKILL.md; do
+            [ -f "$f" ] || continue
+            folder=$(basename "$(dirname "$f")")
+            # Frontmatter must exist
+            if ! head -1 "$f" | grep -q '^---$'; then
+              echo "::error file=$f::Missing YAML frontmatter"
+              fail=1
+              continue
+            fi
+            # name: must match folder name
+            name=$(awk '/^---$/{c++; next} c==1 && /^name:/{print $2}' "$f" | tr -d ' ')
+            if [ "$name" != "$folder" ]; then
+              echo "::error file=$f::Frontmatter name ('$name') does not match folder ('$folder')"
+              fail=1
+            fi
+            # description: required and non-trivial
+            desc=$(awk '/^---$/{c++; next} c==1 && /^description:/{sub(/^description:[[:space:]]*/, ""); print}' "$f")
+            if [ -z "$desc" ]; then
+              echo "::error file=$f::Missing or empty 'description' field"
+              fail=1
+            elif [ ${#desc} -lt 30 ]; then
+              echo "::error file=$f::'description' is too short (<30 chars) — make it a clear trigger sentence"
+              fail=1
+            fi
+          done
+          exit $fail
+
+      - name: Agents have required frontmatter
+        run: |
+          fail=0
+          for f in .claude/agents/*.md; do
+            [ -f "$f" ] || continue
+            if ! head -1 "$f" | grep -q '^---$'; then
+              echo "::error file=$f::Missing YAML frontmatter"
+              fail=1
+              continue
+            fi
+            for field in name description; do
+              if ! awk '/^---$/{c++; next} c==1' "$f" | grep -q "^$field:"; then
+                echo "::error file=$f::Missing '$field' in frontmatter"
+                fail=1
+              fi
+            done
+          done
+          exit $fail
+
+      - name: settings.example.json is valid JSON
+        run: |
+          if [ -f settings.example.json ]; then
+            jq . settings.example.json > /dev/null
+          fi
+
+      - name: No secrets-shaped strings committed
+        run: |
+          # Simple heuristic check — does not replace a real secret scanner
+          pattern='(AKIA[0-9A-Z]{16}|AIza[0-9A-Za-z_-]{35}|sk-[A-Za-z0-9]{32,})'
+          if git grep -nE "$pattern" -- '*.md' '*.sh' '*.json' '*.yml' '*.yaml' 2>/dev/null; then
+            echo "::error::Possible secret-shaped string committed"
+            exit 1
+          fi
