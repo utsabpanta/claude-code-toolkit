@@ -43,11 +43,14 @@ base=$(basename "$file")
 # Patterns that are almost always sensitive or noise
 suspicious=""
 case "$base" in
-  .env|.env.*|*.env)                   suspicious=".env files typically contain secrets" ;;
-  *.pem|*.key|id_rsa|id_ed25519)       suspicious="private key file" ;;
-  credentials.json|service-account.json|*-key.json)  suspicious="credential file" ;;
-  *.sqlite|*.sqlite3|*.db)             suspicious="local database file" ;;
-  .DS_Store|Thumbs.db)                 suspicious="OS metadata file" ;;
+  # Order matters: specific filenames must come before wildcards that would swallow them
+  # (e.g. `*.db` would match `Thumbs.db`).
+  .DS_Store|Thumbs.db)                             suspicious="OS metadata file" ;;
+  id_rsa|id_ed25519)                               suspicious="private key file" ;;
+  credentials.json|service-account.json|*-key.json) suspicious="credential file" ;;
+  .env|.env.*|*.env)                               suspicious=".env files typically contain secrets" ;;
+  *.pem|*.key)                                     suspicious="private key file" ;;
+  *.sqlite|*.sqlite3|*.db)                         suspicious="local database file" ;;
 esac
 
 [ -z "$suspicious" ] && exit 0
