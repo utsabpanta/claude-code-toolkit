@@ -1,0 +1,241 @@
+# Claude Code — Team Power Pack
+
+A curated, opinionated collection of **skills**, **agents**, **hooks**, **output styles**, and a **custom status line** for [Claude Code](https://claude.com/claude-code) — built to make real software teams dramatically more productive.
+
+> **New to Claude Code extensibility?** Start with **[CONCEPTS.md](CONCEPTS.md)** to understand what a skill / agent / hook / output style actually is.
+>
+> **Want to see what it looks like in practice?** Check **[EXAMPLES.md](EXAMPLES.md)** for concrete before/after demos.
+
+---
+
+## The 30-second overview
+
+| Feature | In plain English | Who triggers it |
+|---|---|---|
+| **Command** | A quick prompt shortcut that takes arguments (`/tldr file.ts`, `/tradeoff A vs B`) | You |
+| **Skill** | A multi-step workflow you invoke with a slash command (`/code-review`, `/commit`, `/standup`) | You |
+| **Agent** | A specialist Claude can delegate to (code-reviewer, security-auditor, architect) | Claude |
+| **Hook** | A script that runs automatically on events (format-on-save, block-force-push) | Claude Code harness |
+| **Output style** | A persistent tone preset (`terse`, `teacher`, `senior-reviewer`) | You, via `/config` |
+
+See [CONCEPTS.md](CONCEPTS.md) for the long version.
+
+---
+
+## Who this is for
+
+- **Engineers** — code review, test generation, debugging, refactoring, PRs, commits, onboarding
+- **Product / PMs** — user stories, release notes
+- **Engineering managers** — standups, retros, incident response, on-call handoffs
+- **Teams** — shared skills checked into your repo so everyone uses the same workflows
+
+Everything here is plain Markdown + a few shell scripts. Drop it in your `~/.claude/`, restart Claude Code, done.
+
+---
+
+## Install — one line
+
+```bash
+git clone https://github.com/<your-fork>/claude-skills && cd claude-skills
+./install.sh --all
+```
+
+See [INSTALL.md](INSTALL.md) for alternatives (cherry-pick, project-level, manual).
+
+---
+
+## What's inside
+
+### ⚡ 6 commands — quick slash shortcuts
+
+Invoked with `/<name> [args]`. One-shot prompt templates for common requests. See **[COMMANDS.md](COMMANDS.md)** and [CONCEPTS.md](CONCEPTS.md#commands-vs-skills) for the command vs. skill distinction.
+
+| Command | For | What it does |
+|---|---|---|
+| [`/tldr`](.claude/commands/tldr.md) | Everyone | 3-bullet summary of a file, function, or diff |
+| [`/blame-why`](.claude/commands/blame-why.md) | Engineers | Explain why a line exists — git blame + commit context |
+| [`/5-whys`](.claude/commands/5-whys.md) | EMs, engineers | Root-cause analysis walk-through |
+| [`/tradeoff`](.claude/commands/tradeoff.md) | Engineers, architects | Structured tradeoff matrix between options |
+| [`/what-changed`](.claude/commands/what-changed.md) | Everyone | Summarize git changes since a ref or date |
+| [`/rubber-duck`](.claude/commands/rubber-duck.md) | Engineers | Help you think — without solving for you |
+
+### 🧠 14 skills — multi-step workflows invoked with `/<name>`
+
+| Slash command | For | What it does |
+|---|---|---|
+| [`/code-review`](.claude/skills/code-review/SKILL.md) | Engineers | Reviews pending changes against a principled rubric |
+| [`/pr-description`](.claude/skills/pr-description/SKILL.md) | Engineers | Writes a PR title + body from commits and diff |
+| [`/test-gen`](.claude/skills/test-gen/SKILL.md) | Engineers | Tests with edge-case enumeration, not just happy paths |
+| [`/debug-help`](.claude/skills/debug-help/SKILL.md) | Engineers | Hypothesis-driven systematic debugging |
+| [`/commit`](.claude/skills/commit/SKILL.md) | Engineers | Smart commits — safe staging, honest messages |
+| [`/adr`](.claude/skills/adr/SKILL.md) | Engineers, architects | Architecture Decision Records with tradeoffs named |
+| [`/explain`](.claude/skills/explain/SKILL.md) | Engineers | Explains code at the user's level, not textbook-generic |
+| [`/onboard`](.claude/skills/onboard/SKILL.md) | New team members | Map a new codebase in an hour |
+| [`/user-story`](.claude/skills/user-story/SKILL.md) | PMs | Well-formed stories with acceptance criteria |
+| [`/release-notes`](.claude/skills/release-notes/SKILL.md) | PMs, EMs | Customer-facing release notes from git commits |
+| [`/standup`](.claude/skills/standup/SKILL.md) | EMs, engineers | Standup notes from yesterday's git activity |
+| [`/retro`](.claude/skills/retro/SKILL.md) | EMs | Facilitates retros that produce action items, not vents |
+| [`/incident`](.claude/skills/incident/SKILL.md) | On-call engineers | Live incident flow + postmortem writing |
+| [`/oncall-handoff`](.claude/skills/oncall-handoff/SKILL.md) | On-call engineers | Shift-end handoff notes |
+
+👉 See [EXAMPLES.md](EXAMPLES.md#skills) for what each one actually produces.
+
+### 🤖 8 agents — specialists Claude can delegate to
+
+Agents have fresh context (no bias from the main conversation) and often restricted tools (a reviewer that can read but not write). Claude picks them automatically based on their `description`, or you can name them (`"use the security-auditor agent"`).
+
+| Agent | Use when |
+|---|---|
+| [`code-reviewer`](.claude/agents/code-reviewer.md) | You want a rigorous, independent second opinion on a diff |
+| [`test-engineer`](.claude/agents/test-engineer.md) | You want tests with real coverage discipline |
+| [`security-auditor`](.claude/agents/security-auditor.md) | Shipping code that touches auth, input, secrets, or network |
+| [`architect`](.claude/agents/architect.md) | Designing a non-trivial change and want a plan first |
+| [`doc-writer`](.claude/agents/doc-writer.md) | You need docs humans will actually read |
+| [`incident-commander`](.claude/agents/incident-commander.md) | You're in a live incident and need someone driving the loop |
+| [`onboarding-buddy`](.claude/agents/onboarding-buddy.md) | A new team member needs to get productive in a codebase |
+| [`performance-analyst`](.claude/agents/performance-analyst.md) | Something is slow — you want measurement, not speculation |
+
+👉 See [EXAMPLES.md](EXAMPLES.md#agents) for realistic exchanges.
+
+### 🪝 5 hooks — automation around Claude
+
+Run shell commands on Claude Code events. **Most people don't know this feature exists**; it's one of the most powerful things in the product. See **[HOOKS.md](HOOKS.md)** for the complete guide.
+
+| Hook | Event | What it does |
+|---|---|---|
+| [`format-on-edit.sh`](.claude/hooks/format-on-edit.sh) | PostToolUse | Auto-formats files Claude edits (prettier, black, gofmt, rustfmt) |
+| [`block-env-writes.sh`](.claude/hooks/block-env-writes.sh) | PreToolUse | Blocks writes to `.env`, private keys, credentials |
+| [`block-force-push.sh`](.claude/hooks/block-force-push.sh) | PreToolUse | Refuses `git push --force` without explicit opt-in |
+| [`session-summary.sh`](.claude/hooks/session-summary.sh) | Stop | Logs each session to `~/.claude/session.log` |
+| [`notify-on-idle.sh`](.claude/hooks/notify-on-idle.sh) | Notification | Desktop notification when Claude is waiting on you |
+
+### 🎭 4 output styles — swap Claude's voice per task
+
+Reusable system-prompt presets. Switch via `/config` or add `"outputStyle": "<name>"` to `settings.json`. See **[OUTPUT-STYLES.md](OUTPUT-STYLES.md)**.
+
+| Style | Best for |
+|---|---|
+| [`terse`](.claude/output-styles/terse.md) | You know what you want. No preamble. |
+| [`pair-programmer`](.claude/output-styles/pair-programmer.md) | Exploring a problem together, thinking out loud |
+| [`teacher`](.claude/output-styles/teacher.md) | Learning an unfamiliar codebase or pattern |
+| [`senior-reviewer`](.claude/output-styles/senior-reviewer.md) | Adversarial mode — surfaces edge cases you missed |
+
+### 📊 Custom status line
+
+A git-aware status line with model, cwd, branch, dirty state, ahead/behind, and session cost. See **[.claude/statusline/README.md](.claude/statusline/README.md)**.
+
+```
+sonnet-4-6 | my-app | main* ↑2 | $0.42
+```
+
+### 🔌 MCP server guide
+
+Curated list of genuinely useful MCP servers (GitHub, Postgres, Sentry, Linear, Puppeteer...) with setup snippets and security notes. See **[MCP.md](MCP.md)**.
+
+### ⚙️ Safe default `settings.json`
+
+A vetted starting point — permission allowlist (read-only ops) + denylist (destructive ops). See [`settings.example.json`](settings.example.json) and [`settings.example.README.md`](settings.example.README.md).
+
+---
+
+## Quickstart (5 minutes)
+
+1. **Install:**
+   ```bash
+   git clone https://github.com/<your-fork>/claude-skills && cd claude-skills
+   ./install.sh --skills --commands --agents --output-styles
+   ```
+
+2. **Restart Claude Code.**
+
+3. **Try a command:**
+   ```
+   /tldr src/some-file.ts
+   ```
+   Claude returns a 3-bullet summary.
+
+4. **Try a skill:**
+   ```
+   /standup
+   ```
+   Claude will pull your git activity and draft a standup note.
+
+4. **Try an output style:**
+   - Run `/config`
+   - Find "Output Style" in the settings menu
+   - Pick `terse`
+   - Every response is now short and direct.
+
+5. **Try an agent:**
+   ```
+   Use the code-reviewer agent to look at my staged changes.
+   ```
+   Claude spawns the agent with a fresh context for an independent review.
+
+6. **Optional: install a hook:**
+   ```bash
+   ./install.sh --hooks
+   ```
+   Then add this to `~/.claude/settings.json`:
+   ```json
+   {
+     "hooks": {
+       "PostToolUse": [
+         {
+           "matcher": "Edit|Write",
+           "hooks": [
+             { "type": "command", "command": "/Users/you/.claude/hooks/format-on-edit.sh" }
+           ]
+         }
+       ]
+     }
+   }
+   ```
+   Now your code is auto-formatted whenever Claude edits a file.
+
+See [EXAMPLES.md](EXAMPLES.md) for longer walkthroughs.
+
+---
+
+## Documentation map
+
+| Doc | What's in it |
+|---|---|
+| [README.md](README.md) | You're here — index of everything |
+| [CONCEPTS.md](CONCEPTS.md) | What a skill/agent/hook/output style actually is, and when to use which |
+| [EXAMPLES.md](EXAMPLES.md) | Concrete before/after demos for each feature |
+| [INSTALL.md](INSTALL.md) | Install options + troubleshooting |
+| [COMMANDS.md](COMMANDS.md) | Slash commands — when to use, how to write your own |
+| [HOOKS.md](HOOKS.md) | Deep dive on hooks, all event types, stdin formats |
+| [OUTPUT-STYLES.md](OUTPUT-STYLES.md) | How output styles work, how to switch, how to write your own |
+| [MCP.md](MCP.md) | Curated MCP server list with setup snippets |
+| [CLAUDE.md](CLAUDE.md) | Guidance Claude uses when modifying this repo itself |
+| [settings.example.json](settings.example.json) | Template settings file |
+| [settings.example.README.md](settings.example.README.md) | What's in the settings example and why |
+
+---
+
+## Design principles
+
+Everything in this repo follows these rules:
+
+1. **Spell out *how*, not just *what*.** A good skill tells Claude the *process* — what to check first, what order to work in — not just the goal.
+2. **One skill, one job.** `/code-review` reviews. It doesn't also open PRs.
+3. **Produce an artifact.** Every skill ends with something concrete: a review, a description, a file, a checklist.
+4. **Be opinionated.** These files reflect choices about what "good" looks like. Fork and change them — that's the point.
+5. **Fail safe.** Defaults that won't ruin your day. Explicit opt-in for anything destructive.
+
+---
+
+## Contributing
+
+PRs welcome. If you've got a skill or agent that's served your team well, share it.
+
+- Each skill is one folder with one `SKILL.md` — no dependencies between skills.
+- Match the tone of existing skills (direct, second-person to Claude).
+- Don't add examples that reference internal systems or specific people.
+- Add an entry to EXAMPLES.md if your addition is non-obvious.
+
+## License
+
+MIT.
