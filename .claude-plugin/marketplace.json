@@ -1,0 +1,16 @@
+{
+  "name": "claude-code-toolkit",
+  "owner": {
+    "name": "claude-code-toolkit contributors",
+    "url": "https://github.com/utsabpanta/claude-code-toolkit"
+  },
+  "plugins": [
+    {
+      "name": "team-power-pack",
+      "source": ".",
+      "description": "Skills, agents, output styles, and slash commands for engineering teams: code review, PR descriptions, debugging, incidents, release notes, and more.",
+      "version": "0.1.0",
+      "keywords": ["engineering", "code-review", "incidents", "team"]
+    }
+  ]
+}

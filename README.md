@@ -1,8 +1,10 @@
 # Claude Code — Team Power Pack
 
-A curated, opinionated collection of **skills**, **agents**, **hooks**, **output styles**, and a **custom status line** for [Claude Code](https://claude.com/claude-code) — built to make real software teams dramatically more productive.
+A curated, opinionated collection of **skills**, **agents**, **slash commands**, **hooks**, **output styles**, and a **custom status line** for [Claude Code](https://claude.com/claude-code) — built to make real software teams dramatically more productive.
 
-> **New to Claude Code extensibility?** Start with **[CONCEPTS.md](CONCEPTS.md)** to understand what a skill / agent / hook / output style actually is.
+The whole thing is packaged as a **plugin**, so you can install it with one command from inside Claude Code.
+
+> **New to Claude Code extensibility?** Start with **[CONCEPTS.md](CONCEPTS.md)** to understand what a skill / agent / hook / output style / plugin actually is.
 >
 > **Want to see what it looks like in practice?** Check **[EXAMPLES.md](EXAMPLES.md)** for concrete before/after demos.
 
@@ -12,11 +14,13 @@ A curated, opinionated collection of **skills**, **agents**, **hooks**, **output
 
 | Feature | In plain English | Who triggers it |
 |---|---|---|
-| **Command** | A quick prompt shortcut that takes arguments (`/tldr file.ts`, `/tradeoff A vs B`) | You |
-| **Skill** | A multi-step workflow you invoke with a slash command (`/code-review`, `/commit`, `/standup`) | You |
-| **Agent** | A specialist Claude can delegate to (code-reviewer, security-auditor, architect) | Claude |
+| **Skill** | A multi-step workflow invoked with a slash command (`/code-review`, `/commit`, `/standup`). Recommended for new things. | You |
+| **Slash command** | A short, argument-taking prompt template (`/tldr file.ts`, `/tradeoff A vs B`). Still works; great for one-shots. | You |
+| **Agent** | A specialist sub-Claude with fresh context (code-reviewer, security-auditor, architect) | Claude (or you, by name) |
 | **Hook** | A script that runs automatically on events (format-on-save, block-force-push) | Claude Code harness |
 | **Output style** | A persistent tone preset (`terse`, `teacher`, `senior-reviewer`) | You, via `/config` |
+| **Plugin** | A bundle of any of the above, distributed as a Git repo and installed with `/plugin install` | You |
+| **MCP server** | An external process that exposes new tools to Claude (GitHub, Postgres, Sentry, …) | Claude (as tools) |
 
 See [CONCEPTS.md](CONCEPTS.md) for the long version.
 
@@ -33,31 +37,29 @@ Everything here is plain Markdown + a few shell scripts. Drop it in your `~/.cla
 
 ---
 
-## Install — one line
+## Install — pick one
+
+**As a plugin (recommended).** Inside Claude Code, run:
+
+```
+/plugin marketplace add utsabpanta/claude-code-toolkit
+/plugin install team-power-pack@claude-code-toolkit
+```
+
+Skills, agents, slash commands, and output styles all activate immediately. Hooks stay opt-in (see below).
+
+**As copied files (if you'd rather not use the plugin system):**
 
 ```bash
-git clone https://github.com/<your-fork>/claude-skills && cd claude-skills
+git clone https://github.com/utsabpanta/claude-code-toolkit && cd claude-code-toolkit
 ./install.sh --all
 ```
 
-See [INSTALL.md](INSTALL.md) for alternatives (cherry-pick, project-level, manual).
+See **[PLUGINS.md](PLUGINS.md)** for plugin install details (and how to publish your own) and **[INSTALL.md](INSTALL.md)** for the script-based options (cherry-pick, project-level, manual).
 
 ---
 
 ## What's inside
-
-### ⚡ 6 commands — quick slash shortcuts
-
-Invoked with `/<name> [args]`. One-shot prompt templates for common requests. See **[COMMANDS.md](COMMANDS.md)** and [CONCEPTS.md](CONCEPTS.md#commands-vs-skills) for the command vs. skill distinction.
-
-| Command | For | What it does |
-|---|---|---|
-| [`/tldr`](.claude/commands/tldr.md) | Everyone | 3-bullet summary of a file, function, or diff |
-| [`/blame-why`](.claude/commands/blame-why.md) | Engineers | Explain why a line exists — git blame + commit context |
-| [`/5-whys`](.claude/commands/5-whys.md) | EMs, engineers | Root-cause analysis walk-through |
-| [`/tradeoff`](.claude/commands/tradeoff.md) | Engineers, architects | Structured tradeoff matrix between options |
-| [`/what-changed`](.claude/commands/what-changed.md) | Everyone | Summarize git changes since a ref or date |
-| [`/rubber-duck`](.claude/commands/rubber-duck.md) | Engineers | Help you think — without solving for you |
 
 ### 🧠 19 skills — multi-step workflows invoked with `/<name>`
 
@@ -84,6 +86,19 @@ Invoked with `/<name> [args]`. One-shot prompt templates for common requests. Se
 | [`/oncall-handoff`](.claude/skills/oncall-handoff/SKILL.md) | On-call engineers | Shift-end handoff notes |
 
 👉 See [EXAMPLES.md](EXAMPLES.md#skills) for what each one actually produces.
+
+### ⚡ 6 slash commands — quick one-shot prompts
+
+Invoked with `/<name> [args]`. Lighter than skills — one prompt, argument substitution via `$ARGUMENTS`, no multi-step process. See **[COMMANDS.md](COMMANDS.md)** for the command vs. skill distinction.
+
+| Command | For | What it does |
+|---|---|---|
+| [`/tldr`](.claude/commands/tldr.md) | Everyone | 3-bullet summary of a file, function, or diff |
+| [`/blame-why`](.claude/commands/blame-why.md) | Engineers | Explain why a line exists — git blame + commit context |
+| [`/5-whys`](.claude/commands/5-whys.md) | EMs, engineers | Root-cause analysis walk-through |
+| [`/tradeoff`](.claude/commands/tradeoff.md) | Engineers, architects | Structured tradeoff matrix between options |
+| [`/what-changed`](.claude/commands/what-changed.md) | Everyone | Summarize git changes since a ref or date |
+| [`/rubber-duck`](.claude/commands/rubber-duck.md) | Engineers | Help you think — without solving for you |
 
 ### 🤖 12 agents — specialists Claude can delegate to
 
@@ -152,39 +167,43 @@ A vetted starting point — permission allowlist (read-only ops) + denylist (des
 
 ## Quickstart (5 minutes)
 
-1. **Install:**
+1. **Install (plugin, recommended):**
+   ```
+   /plugin marketplace add utsabpanta/claude-code-toolkit
+   /plugin install team-power-pack@claude-code-toolkit
+   ```
+
+   Or, if you'd rather copy files manually:
    ```bash
-   git clone https://github.com/<your-fork>/claude-skills && cd claude-skills
+   git clone https://github.com/utsabpanta/claude-code-toolkit && cd claude-code-toolkit
    ./install.sh --skills --commands --agents --output-styles
    ```
 
-2. **Restart Claude Code.**
-
-3. **Try a command:**
+2. **Try a slash command:**
    ```
    /tldr src/some-file.ts
    ```
    Claude returns a 3-bullet summary.
 
-4. **Try a skill:**
+3. **Try a skill:**
    ```
    /standup
    ```
-   Claude will pull your git activity and draft a standup note.
+   Claude pulls your git activity and drafts a standup note.
 
-5. **Try an output style:**
+4. **Try an output style:**
    - Run `/config`
    - Find "Output Style" in the settings menu
    - Pick `terse`
    - Every response is now short and direct.
 
-6. **Try an agent:**
+5. **Try an agent:**
    ```
    Use the code-reviewer agent to look at my staged changes.
    ```
    Claude spawns the agent with a fresh context for an independent review.
 
-7. **Optional: install a hook:**
+6. **Optional: install a hook** (not bundled in the plugin — hooks need machine-specific paths):
    ```bash
    ./install.sh --hooks
    ```
@@ -214,10 +233,11 @@ See [EXAMPLES.md](EXAMPLES.md) for longer walkthroughs.
 | Doc | What's in it |
 |---|---|
 | [README.md](README.md) | You're here — index of everything |
-| [CONCEPTS.md](CONCEPTS.md) | What a skill/agent/hook/output style actually is, and when to use which |
+| [CONCEPTS.md](CONCEPTS.md) | What a skill / agent / hook / output style / plugin actually is, and when to use which |
+| [PLUGINS.md](PLUGINS.md) | How to install this repo as a plugin and how to publish your own |
 | [EXAMPLES.md](EXAMPLES.md) | Concrete before/after demos for each feature |
-| [INSTALL.md](INSTALL.md) | Install options + troubleshooting |
-| [COMMANDS.md](COMMANDS.md) | Slash commands — when to use, how to write your own |
+| [INSTALL.md](INSTALL.md) | Script-based install options + troubleshooting |
+| [COMMANDS.md](COMMANDS.md) | Slash commands — when to use them vs. skills, how to write your own |
 | [HOOKS.md](HOOKS.md) | Deep dive on hooks, all event types, stdin formats |
 | [OUTPUT-STYLES.md](OUTPUT-STYLES.md) | How output styles work, how to switch, how to write your own |
 | [MCP.md](MCP.md) | Curated MCP server list with setup snippets |

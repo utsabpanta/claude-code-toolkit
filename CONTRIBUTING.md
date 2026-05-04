@@ -38,12 +38,13 @@ Hooks are shell scripts the Claude Code harness runs on events.
 - No network calls without opt-in.
 - No hook that modifies user files without an explicit setting to enable it.
 
-## Adding a command
+## Adding a slash command
 
-A command is a short, argument-taking prompt shortcut — one-shot, not multi-step.
+A slash command is a short, argument-taking prompt shortcut — one-shot, not multi-step.
 
 - Put it in `.claude/commands/<name>.md`.
-- If your idea is multi-step, make it a skill instead.
+- Frontmatter: `description` (one-line, shown in picker) and `argument-hint` (placeholder for the argument).
+- **If your idea is multi-step, make it a skill instead** — skills are the recommended primary mechanism for non-trivial workflows.
 
 ## Adding an output style
 
@@ -63,9 +64,11 @@ A command is a short, argument-taking prompt shortcut — one-shot, not multi-st
 
 Before opening a PR:
 
-- [ ] Run `./install.sh` from a clean clone and verify your skill/agent/hook installs.
+- [ ] **Plugin path:** load the repo with `claude --plugin-dir .` and verify your skill/agent/command/style appears.
+- [ ] **Script path:** run `./install.sh` from a clean clone and verify your skill/agent/hook installs.
 - [ ] Invoke it (`/<your-skill>`) and confirm the output matches what the SKILL.md promises.
 - [ ] If it's a hook, test both the success path and the failure path.
+- [ ] Validate `.claude-plugin/plugin.json` if you touched it: `jq . .claude-plugin/plugin.json`.
 - [ ] Run the CI checks locally if you can (`shellcheck .claude/hooks/*.sh`).
 
 ## PR checklist
@@ -74,6 +77,7 @@ Before opening a PR:
 - [ ] Frontmatter is correct (name matches folder, description is a trigger sentence).
 - [ ] No secrets, internal URLs, or company-specific content.
 - [ ] Added an entry to the relevant table in `README.md`.
+- [ ] If you changed plugin layout, updated `.claude-plugin/plugin.json` and bumped `version`.
 - [ ] If non-obvious: added a before/after example to `EXAMPLES.md`.
 - [ ] CI passes.
 

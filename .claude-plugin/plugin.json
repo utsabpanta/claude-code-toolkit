@@ -1,0 +1,27 @@
+{
+  "name": "team-power-pack",
+  "version": "0.1.0",
+  "description": "A curated, opinionated collection of skills, agents, output styles, and slash commands for Claude Code — built to make real software teams dramatically more productive.",
+  "author": {
+    "name": "claude-code-toolkit contributors",
+    "url": "https://github.com/utsabpanta/claude-code-toolkit"
+  },
+  "homepage": "https://github.com/utsabpanta/claude-code-toolkit",
+  "repository": "https://github.com/utsabpanta/claude-code-toolkit",
+  "license": "MIT",
+  "keywords": [
+    "code-review",
+    "pr-description",
+    "test-generation",
+    "debugging",
+    "incident-response",
+    "release-notes",
+    "skills",
+    "agents",
+    "output-styles"
+  ],
+  "skills": "./.claude/skills/",
+  "agents": "./.claude/agents/",
+  "commands": "./.claude/commands/",
+  "outputStyles": "./.claude/output-styles/"
+}

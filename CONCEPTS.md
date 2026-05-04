@@ -1,23 +1,26 @@
-# What the hell is a skill? (and an agent, and a hook, and an output style)
+# What the hell is a skill? (and an agent, a hook, an output style, a plugin…)
 
-Claude Code has five customization features that do different things. Most users discover them piecemeal and confuse them. Here's the clean mental model.
+Claude Code has six customization features that do different things. Most users discover them piecemeal and confuse them. Here's the clean mental model.
 
 ## The 30-second version
 
 | Feature | What it is | Who triggers it | When to reach for it |
 |---|---|---|---|
-| **Command** | A one-shot prompt template invoked as a slash command, often with `$ARGUMENTS` | **You** (user) | You want a quick shortcut for a common request |
-| **Skill** | A reusable prompt + multi-step process, invoked as a slash command | **You** (user) | You want a structured workflow Claude follows every time |
+| **Skill** | A reusable prompt + multi-step process, invoked as a slash command | **You** (user) | You want a structured workflow Claude follows every time. **Recommended for new things.** |
+| **Slash command** | A one-shot prompt template invoked with `/<name> [args]`, with `$ARGUMENTS` substitution | **You** (user) | You want a quick shortcut for a single-prompt request |
 | **Agent** | A specialized sub-Claude with its own system prompt and tool access | **Claude** (usually) | You want a focused second opinion, or to protect your main context window |
 | **Hook** | A shell command triggered by a Claude Code event | **Claude Code harness** | You want automation *around* Claude — format on save, block dangerous commands, notifications |
 | **Output style** | A persistent tone/behavior preset for the main Claude | **You**, via `/config` | You want to change how Claude *talks* for a while |
 | **MCP server** | An external process that exposes new tools to Claude | **Claude** (as tools) | You want Claude to access a system it can't reach today (GitHub, a DB, a browser) |
+| **Plugin** | A bundle of any of the above, distributed as a Git repo, installed with `/plugin install` | **You** | You want to share a curated collection across teams or machines |
 
 ---
 
-## Commands — "I want a one-shot shortcut"
+## Slash commands — "I want a one-shot shortcut"
 
-A command is a **prompt template** you invoke with `/<name> [args]`. It's the lightest-weight customization in Claude Code.
+A slash command is a **prompt template** you invoke with `/<name> [args]`. It's the lightest-weight customization in Claude Code.
+
+> **Heads-up on terminology.** Both "slash commands" (the file-based prompt templates in `.claude/commands/`) and "skills" appear in the `/` menu. Internally, skills *also* get a slash command, but they're a richer construct (folder, frontmatter, multi-step instructions). When this doc says "command" it means the simple `.claude/commands/<name>.md` form.
 
 **What they look like:**
 
@@ -41,31 +44,33 @@ Rules:
 
 `$ARGUMENTS` gets replaced with whatever the user typed after the command name. So `/tldr src/foo.ts` runs the template with `$ARGUMENTS = src/foo.ts`.
 
-**When to use a command:**
+**When to use a slash command:**
 - You want a quick, consistent prompt that takes arguments.
 - The task is one-shot — one prompt, one answer — no multi-step process.
 - You want the shortest path from idea to output.
 
-**When to reach for a skill instead of a command:**
+**When to reach for a skill instead:**
 - The task has multiple phases (gather data, analyze, produce artifact).
 - You want Claude to follow a specific *process* — check X first, then Y, then Z.
 - You need structure the template-plus-args shape can't express.
 
-## Commands vs. skills
+> Slash commands aren't going away, but **skills are now the recommended primary mechanism** for any non-trivial workflow. If you're starting fresh, default to a skill. Use a command for true one-liners.
+
+## Slash commands vs. skills
 
 Both are invoked with `/<name>`. The difference is structure:
 
-| | Command | Skill |
+| | Slash command | Skill |
 |---|---|---|
-| Format | Single `.md` file | Folder with `SKILL.md` |
-| Takes arguments | Yes (`$ARGUMENTS`) | Claude parses from user message |
+| Format | Single `.md` file in `.claude/commands/` | Folder with `SKILL.md` in `.claude/skills/` |
+| Takes arguments | Yes (`$ARGUMENTS`, `argument-hint:`) | Claude parses from user message |
 | Structure | One prompt | Multi-step process |
 | Good for | Quick shortcuts | Repeatable workflows |
 | Example | `/tldr src/foo.ts` | `/code-review` |
 
 **Heuristic:** start with a command. If the prompt grows steps and starts looking like a recipe, promote it to a skill.
 
-👉 **This repo's commands:** see the [Commands table in README](README.md#-6-commands--quick-slash-shortcuts).
+👉 **This repo's slash commands:** see the table in [README](README.md) and [COMMANDS.md](COMMANDS.md).
 
 ---
 
@@ -106,7 +111,7 @@ Your job is to produce a review that a senior engineer would be glad to receive.
 - One-off tasks. Just ask Claude directly.
 - Things that need to be auto-triggered on an event. That's a hook.
 
-👉 **This repo's skills:** see the [Skills table in README](README.md#-14-slash-command-skills).
+👉 **This repo's skills:** see the Skills table in [README](README.md).
 
 ---
 
@@ -150,7 +155,7 @@ You are a security engineer reviewing code for shippability...
 
 A skill is a recipe. An agent is a specialist. You can even use them together — a skill's instructions can say "for the security pass, delegate to the `security-auditor` agent".
 
-👉 **This repo's agents:** see the [Agents table in README](README.md#-8-specialized-agents).
+👉 **This repo's agents:** see the Agents table in [README](README.md).
 
 ---
 
@@ -263,6 +268,31 @@ Example: the GitHub MCP server exposes tools like `github.create_issue`, `github
 
 ---
 
+## Plugins — "Bundle this stuff and ship it to a team"
+
+A plugin is a Git repo with `.claude-plugin/plugin.json` declaring a bundle of skills, agents, slash commands, output styles, hooks, and/or MCP servers. Users install with one command:
+
+```
+/plugin marketplace add <git-url-or-owner/repo>
+/plugin install <plugin-name>@<marketplace-name>
+```
+
+…and they get every component the plugin ships, in one go. Updates are pulled with `/plugin marketplace update`.
+
+**What plugins are for:**
+- Sharing a curated toolkit across a team without each person running an install script.
+- Distributing your work to the open source community.
+- Versioning bundles together so a `team-power-pack v1.2` always means the same thing.
+
+**What plugins are NOT:**
+- A different *kind* of feature. A plugin is a *delivery vehicle* for the features you already understand. There's no such thing as "plugin code" — there's a skill, agent, hook, etc., that happens to live inside a plugin.
+
+**This repo is itself a plugin** — see [`.claude-plugin/plugin.json`](.claude-plugin/plugin.json) and [`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json). Either install it (instructions in [PLUGINS.md](PLUGINS.md)) or use the layout as a template for your own.
+
+👉 **Full plugin guide:** see [PLUGINS.md](PLUGINS.md).
+
+---
+
 ## How they compose
 
 These features work together. A realistic setup:
@@ -273,7 +303,7 @@ These features work together. A realistic setup:
 - **Hooks**: `format-on-edit.sh` formats every file Claude edits; `block-force-push.sh` protects your remote; `notify-on-idle.sh` pings your desktop when Claude needs input
 - **MCP servers** for GitHub + Sentry so Claude can read issues and error events directly
 
-That's the whole Claude Code extensibility surface. Five features. Each does one thing well.
+That's the whole Claude Code extensibility surface. Six features. Each does one thing well — and plugins exist to ship any combination of the others as a single unit.
 
 ## How to invoke each one (the exact mechanics)
 
@@ -281,11 +311,12 @@ Most of the confusion in this repo comes from the naming: `/code-review` (skill)
 
 | Feature | Invocation | Who does the work | Context |
 |---|---|---|---|
-| **Command** | Type `/name [args]` — e.g. `/tldr src/foo.ts` | Main Claude in your current chat | Same as your conversation |
+| **Slash command** | Type `/name [args]` — e.g. `/tldr src/foo.ts` | Main Claude in your current chat | Same as your conversation |
 | **Skill** | Type `/name` — e.g. `/code-review` | Main Claude in your current chat | Same as your conversation |
 | **Agent** | Ask by name — e.g. "use the code-reviewer agent" or "@code-reviewer" | A separate sub-Claude spawned for this task | Fresh, isolated — doesn't see your prior chat |
 | **Output style** | `/config` → pick one | Main Claude, but voice/tone changed | Same conversation, different instructions on top |
 | **Hook** | Triggered automatically by Claude Code events | Not Claude — a shell script you wrote | N/A (runs outside the conversation) |
+| **Plugin** | `/plugin install <name>@<marketplace>` (one-time) | N/A — installs other components | N/A |
 
 ### `/code-review` vs. `code-reviewer` — worked example
 
@@ -317,8 +348,9 @@ If auto-delegation misses, just name the agent — "use the X agent on this" is 
 
 ## Common confusions
 
-- **"Command or skill?"** — One prompt with args? Command. Multi-step process? Skill.
+- **"Command or skill?"** — One prompt with args? Slash command. Multi-step process? Skill. Default to a skill for new things.
 - **"Skill or agent?"** — Does the user invoke it directly (`/name`)? Skill (or command). Does Claude decide when to use it? Agent.
 - **"Should I use a hook or a skill for X?"** — Does the user need to ask for it every time? Skill. Does it need to happen automatically, without Claude even knowing? Hook.
 - **"What's the difference between an output style and a skill?"** — Style = how Claude talks. Skill = what Claude does. They stack.
 - **"Does an agent replace the main Claude?"** — No. The main Claude delegates *to* the agent, reads its result, and continues the conversation with you.
+- **"Plugin or skill?"** — Not a real choice — a plugin is just a way to ship one or more skills (or agents, or hooks…). Author skills. Bundle them as a plugin when you want to share them.

@@ -6,7 +6,7 @@ Responses below are illustrative — actual Claude output will vary in wording. 
 
 ---
 
-## Commands
+## Slash commands
 
 ### `/tldr` — 3-bullet summary of anything
 
