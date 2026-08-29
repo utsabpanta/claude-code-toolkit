@@ -1,0 +1,21 @@
+# Personal Claude Code state — never commit
+.claude/settings.local.json
+.claude/audit/
+.claude/session.log
+
+# Generated demo output (run `vhs demo/toolkit.tape` to produce it)
+demo/*.gif
+!demo/toolkit.gif
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+
+# Dependency and build output
+node_modules/
+dist/
+build/
+*.log

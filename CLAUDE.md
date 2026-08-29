@@ -1,47 +1,69 @@
 # Guidance for Claude
 
-This repo is a collection of skills, agents, slash commands, hooks, output styles, and a status line, packaged as a Claude Code plugin and meant to be shared with other teams.
+This repo is the Claude Code guardrails toolkit: tested safety hooks, permission policies, and specialist review agents, published as a marketplace with two plugins.
 
 ## What this repo is
 
-- `.claude/skills/*/SKILL.md` — multi-step skills (recommended for new workflows)
-- `.claude/commands/*.md` — single-prompt slash commands (still supported; use for one-shots)
-- `.claude/agents/*.md` — specialized sub-agents
-- `.claude/hooks/*.sh` — shell scripts wired in via `settings.json` (opt-in, not auto-installed)
-- `.claude/output-styles/*.md` — tone presets activated via `/config`
-- `.claude/statusline/statusline.sh` — git-aware status line script
-- `.claude-plugin/plugin.json` + `marketplace.json` — packages this repo as a plugin (`/plugin install`)
-- `settings.example.json` — a template settings file
-- `install.sh` — copy-files alternative to plugin install
-- `README.md`, `PLUGINS.md`, `INSTALL.md`, `CONCEPTS.md`, `COMMANDS.md`, `HOOKS.md`, `OUTPUT-STYLES.md`, `MCP.md` — docs for humans
+A marketplace shipping two plugins.
+
+- `plugins/guardrails/` — **the flagship.** Blocking safety hooks, wired via
+  `hooks/hooks.json` so `/plugin install` needs no `settings.json` editing.
+  Also `policies/` (permission profiles) and three skills about Claude Code
+  configuration itself.
+- `plugins/team-power-pack/` — 12 specialist agents, 17 skills, 4 output styles,
+  a status line.
+- `.claude-plugin/marketplace.json` — lists both plugins.
+- `tests/*.bats` — one suite per hook. `tests/helper.bash` has the assertions.
+- `scripts/doctor.sh` — audits any repo's `.claude/` setup.
+- `docs/` — long-form documentation for humans.
+- `demo/toolkit.tape` — VHS script for the README GIF.
+- `install.sh` — copy-files alternative to plugin install.
 
 ## How to work here
 
-When the user asks you to add or modify a skill or agent:
+**Positioning.** This repo is the guardrails layer. It deliberately does not
+ship commit, code-review, PR-description, or plugin-authoring skills, because
+Anthropic ships those first-party. Do not add them back. If a request implies
+one, say so and point at the first-party plugin.
 
-- **Default to a skill.** Slash commands are still supported, but skills are the primary mechanism for any non-trivial workflow.
-- **Keep each skill focused on one job.** If a request implies two jobs, suggest splitting into two skills.
-- **Write the skill in second person ("you"), addressed to Claude.** That's the convention the harness expects.
-- **Frontmatter matters.** For skills: `name:` must match the folder name; `description:` is what Claude uses to decide when to activate the skill — write it as a trigger sentence, not a marketing blurb. For agents: `name`, `description`, `tools` (comma-separated), and `model` (`sonnet` or `opus`).
-- **Don't add examples that reference secrets, internal URLs, or specific people.** This is public.
-- **Prefer editing an existing skill over creating a new one** if the request is a refinement.
+**Hooks are the priority.** When adding one:
 
-When the user adds or removes a component (skill / agent / command / output style):
+- Source `hooks/lib/common.sh` and use `deny` / `ask` / `add_context` / `allow`.
+  Never hand-roll the decision JSON.
+- `set -uo pipefail`, not `set -euo pipefail`.
+- Exit 1 does **not** block. Only exit 2 or a `deny` payload does.
+- Every hook needs a bats suite with a positive and a negative case.
+- Wire it in `hooks/hooks.json` using `${CLAUDE_PLUGIN_ROOT}`.
+- `deny` for the unrecoverable, `ask` for the merely destructive.
 
-- **Update the README table** for the relevant section.
-- **You usually don't need to touch `plugin.json`** — `skills`, `agents`, `commands`, and `outputStyles` are pointed at directories, so new files are picked up automatically.
-- If you change the directory layout, update `plugin.json` paths.
+**Skills.**
 
-When modifying `settings.example.json`:
+- `description` in the third person, naming concrete triggers. It is the text
+  Claude matches on.
+- Always declare `allowed-tools`.
+- Keep `SKILL.md` under ~2,000 words; put detail in `references/`.
+- Folder name must equal the frontmatter `name`.
+- Write the body addressed to Claude.
 
-- Keep it minimal and commented. This file is read by humans deciding what to merge, not by a parser — comments are fine *as long as they live in an adjacent `.md` doc*, since `settings.json` itself must be valid JSON. If you want inline annotations, use a separate README.
-- Never add a permission that could run destructive commands unattended (e.g. `rm -rf`, `git push --force`, `gh pr merge`).
+**Agents.** `name`, `description`, `tools`, plus `model` (prefer `inherit`),
+`color`, and `disallowedTools` on read-only reviewers.
 
-When modifying plugin manifests (`.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`):
+**When adding or removing a component:** update the README table, `docs/`, and
+`CHANGELOG.md`. You usually do not need to touch `plugin.json` — `skills/`,
+`agents/`, and `output-styles/` are scanned by default.
 
-- Bump `version` in `plugin.json` when behavior changes.
-- Keep `marketplace.json` in sync if you rename or relocate the plugin.
-- Both must be valid JSON — no trailing commas, no comments. Validate with `jq .`.
+**Before finishing any change here, run:**
+
+```bash
+bats tests/ && shellcheck -S warning -x plugins/guardrails/hooks/*.sh && ./scripts/doctor.sh .
+```
+
+**Manifests** (`plugin.json`, `marketplace.json`) must be valid JSON — no
+trailing commas, no comments. Validate with `jq .`. Bump `version` in both the
+plugin manifest and the marketplace entry when behavior changes.
+
+**Never add a permission that could run destructive commands unattended**
+(`rm -rf`, `git push --force`, `gh pr merge`).
 
 ## Conventions
 
@@ -49,4 +71,7 @@ When modifying plugin manifests (`.claude-plugin/plugin.json`, `.claude-plugin/m
 - Skills and agents address Claude as "you".
 - READMEs and top-level docs address humans.
 - Agents have their own frontmatter spec — see existing agents for the pattern.
-- No emoji in file contents unless the user explicitly asked for them.
+- No emoji in file contents. CI enforces this.
+- Skill descriptions are third person ("This skill should be used when..."), which
+  is what the description matcher is tuned for and what Anthropic's own
+  `plugin-dev` skill prescribes. Skill and agent *bodies* stay second person.
