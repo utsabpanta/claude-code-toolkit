@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin.json",
+  "name": "guardrails",
+  "displayName": "Claude Code Guardrails",
+  "version": "1.0.0",
+  "description": "Blocking safety hooks for Claude Code: refuses secret writes, force pushes, and destructive commands. Every hook is tested. Installs with no settings.json editing.",
+  "author": {
+    "name": "Utsab Panta",
+    "url": "https://github.com/utsabpanta"
+  },
+  "homepage": "https://github.com/utsabpanta/claude-code-toolkit",
+  "repository": "https://github.com/utsabpanta/claude-code-toolkit",
+  "license": "MIT",
+  "keywords": [
+    "hooks",
+    "security",
+    "guardrails",
+    "safety",
+    "permissions",
+    "governance",
+    "audit-log",
+    "teams"
+  ],
+  "hooks": "./hooks/hooks.json"
+}

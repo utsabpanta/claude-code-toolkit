@@ -1,16 +1,53 @@
 {
+  "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
   "name": "claude-code-toolkit",
+  "description": "Guardrails and specialist agents for Claude Code. Safety hooks that actually block, and review agents worth delegating to.",
   "owner": {
-    "name": "claude-code-toolkit contributors",
-    "url": "https://github.com/utsabpanta/claude-code-toolkit"
+    "name": "Utsab Panta",
+    "url": "https://github.com/utsabpanta"
   },
   "plugins": [
     {
+      "name": "guardrails",
+      "source": "./plugins/guardrails",
+      "displayName": "Claude Code Guardrails",
+      "description": "Blocking safety hooks: refuses writes to .env and private keys, blocks force pushes and destructive shell commands, asks before production infrastructure and CI workflow edits, and keeps a local audit trail. 13 hooks, every one covered by tests.",
+      "version": "1.0.0",
+      "category": "security",
+      "license": "MIT",
+      "keywords": [
+        "hooks",
+        "security",
+        "guardrails",
+        "governance",
+        "teams"
+      ],
+      "author": {
+        "name": "Utsab Panta",
+        "url": "https://github.com/utsabpanta"
+      },
+      "homepage": "https://github.com/utsabpanta/claude-code-toolkit"
+    },
+    {
       "name": "team-power-pack",
-      "source": ".",
-      "description": "Skills, agents, output styles, and slash commands for engineering teams: code review, PR descriptions, debugging, incidents, release notes, and more.",
-      "version": "0.1.0",
-      "keywords": ["engineering", "code-review", "incidents", "team"]
+      "source": "./plugins/team-power-pack",
+      "displayName": "Team Power Pack",
+      "description": "12 specialist review agents and 17 skills: database migration safety, SQL review, API contract breakage, accessibility, Dockerfiles, incident response, and release notes.",
+      "version": "1.0.0",
+      "category": "development",
+      "license": "MIT",
+      "keywords": [
+        "agents",
+        "skills",
+        "code-review",
+        "migrations",
+        "incidents"
+      ],
+      "author": {
+        "name": "Utsab Panta",
+        "url": "https://github.com/utsabpanta"
+      },
+      "homepage": "https://github.com/utsabpanta/claude-code-toolkit"
     }
   ]
 }

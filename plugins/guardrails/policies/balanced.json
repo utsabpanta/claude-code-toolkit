@@ -1,0 +1,35 @@
+{
+  "permissions": {
+    "defaultMode": "default",
+    "allow": [
+      "Bash(git status:*)", "Bash(git diff:*)", "Bash(git log:*)", "Bash(git show:*)",
+      "Bash(git branch:*)", "Bash(git remote -v)", "Bash(git rev-parse:*)", "Bash(git blame:*)",
+      "Bash(git add:*)", "Bash(git stash:*)", "Bash(git fetch:*)",
+      "Bash(ls:*)", "Bash(pwd)", "Bash(cat:*)", "Bash(head:*)", "Bash(tail:*)", "Bash(wc:*)",
+      "Bash(rg:*)", "Bash(grep:*)", "Bash(find:*)", "Bash(which:*)", "Bash(jq:*)",
+      "Bash(npm test:*)", "Bash(npm run lint:*)", "Bash(npm run build:*)", "Bash(npm run typecheck:*)",
+      "Bash(pnpm test:*)", "Bash(pnpm lint:*)", "Bash(pnpm build:*)",
+      "Bash(pytest:*)", "Bash(ruff:*)", "Bash(mypy:*)",
+      "Bash(go test:*)", "Bash(go build:*)", "Bash(go vet:*)",
+      "Bash(cargo test:*)", "Bash(cargo check:*)", "Bash(cargo clippy:*)",
+      "Bash(make test:*)", "Bash(make lint:*)",
+      "Bash(gh pr view:*)", "Bash(gh pr list:*)", "Bash(gh issue view:*)", "Bash(gh issue list:*)",
+      "Bash(gh pr diff:*)", "Bash(gh run list:*)", "Bash(gh run view:*)"
+    ],
+    "ask": [
+      "Bash(git push:*)", "Bash(gh pr create:*)",
+      "Bash(docker:*)", "Bash(kubectl:*)", "Bash(terraform:*)"
+    ],
+    "deny": [
+      "Bash(rm -rf:*)",
+      "Bash(git push --force:*)", "Bash(git push -f:*)",
+      "Bash(gh pr merge:*)", "Bash(gh release create:*)",
+      "Bash(npm publish:*)", "Bash(cargo publish:*)", "Bash(twine upload:*)",
+      "Bash(terraform apply:*)", "Bash(terraform destroy:*)",
+      "Bash(kubectl delete:*)",
+      "Read(./.env)", "Read(./.env.*)", "Read(./secrets/**)",
+      "Read(~/.aws/**)", "Read(~/.ssh/**)",
+      "Write(./.env)", "Write(./.env.*)", "Write(./secrets/**)"
+    ]
+  }
+}
