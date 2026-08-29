@@ -28,6 +28,13 @@ Keep it under about 40 seconds. The four beats are deliberate:
 recording cuts off mid-output. The `bats` and `doctor.sh` steps are the slow
 ones.
 
+## Swapping it into the README
+
+The README currently shows a static code block in the hero slot, so nothing is
+broken before the GIF exists. Once you have recorded and committed
+`toolkit.gif`, open `README.md`, delete that code block, and uncomment the
+`<img>` tag directly above it.
+
 ## Committing
 
 `.gitignore` ignores `demo/*.gif` except `toolkit.gif`, so the README image is

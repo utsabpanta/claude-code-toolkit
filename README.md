@@ -14,10 +14,29 @@
 
 That is the whole setup. No `settings.json` editing, no absolute paths to hand-write.
 
-<!-- Run `vhs demo/toolkit.tape` to regenerate. See demo/README.md. -->
+<!--
+  DEMO GIF: run `vhs demo/toolkit.tape` (see demo/README.md), commit
+  demo/toolkit.gif, then delete the code block below and uncomment this:
+
 <p align="center">
   <img src="demo/toolkit.gif" alt="Claude Code refusing a write to .env and a force push" width="800">
 </p>
+-->
+
+```console
+$ echo '{"tool_name":"Write","tool_input":{"file_path":"/app/.env"}}' | guard-secrets.sh
+{"permissionDecision":"deny","permissionDecisionReason":"Refused to modify the env
+ file /app/.env. Environment files hold live credentials and are not safe for an
+ agent to rewrite."}
+
+$ echo '{"tool_input":{"command":"git push origin +main:main"}}' | guard-force-push.sh
+{"permissionDecision":"deny","permissionDecisionReason":"Refused to force-push.
+ This rewrites remote history and can destroy commits your teammates already
+ pulled."}
+
+$ bats tests/
+59 tests, 0 failures
+```
 
 ---
 
