@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Claude Code documentation
+    url: https://code.claude.com/docs
+    about: Questions about Claude Code itself, rather than this toolkit
+  - name: Anthropic's first-party plugins
+    url: https://github.com/anthropics/claude-code/tree/main/plugins
+    about: Commits, code review, PR review, and plugin development ship first-party

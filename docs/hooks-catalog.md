@@ -1,6 +1,6 @@
 # Example hooks
 
-See [`HOOKS.md`](../../HOOKS.md) at the repo root for the guide. This folder contains the scripts.
+See [`HOOKS.md`](hooks.md) at the repo root for the guide. This folder contains the scripts.
 
 | Script | Event | What it does |
 |---|---|---|
@@ -14,8 +14,8 @@ See [`HOOKS.md`](../../HOOKS.md) at the repo root for the guide. This folder con
 
 ```bash
 mkdir -p ~/.claude/hooks
-cp format-on-edit.sh ~/.claude/hooks/
-chmod +x ~/.claude/hooks/format-on-edit.sh
+cp format-on-edit.sh ~/plugins/guardrails/hooks/
+chmod +x ~/plugins/guardrails/hooks/format-on-edit.sh
 ```
 
 Then paste the config block from the script's header comment into `~/.claude/settings.json`.

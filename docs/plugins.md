@@ -39,7 +39,7 @@ To list, update, or remove later:
 If you'd rather skip the marketplace step:
 
 ```
-/plugin install https://github.com/utsabpanta/claude-code-toolkit
+/plugin marketplace add utsabpanta/claude-code-toolkit
 ```
 
 Claude Code reads `.claude-plugin/plugin.json` and registers the components.
@@ -57,12 +57,13 @@ Edits to skills/agents are picked up on restart.
 
 ### What you get after install
 
-- **19 skills** — `/code-review`, `/commit`, `/pr-description`, `/standup`, `/incident`, …
+- **17 skills** in `team-power-pack` — `/migration-review`, `/api-design`, `/incident`, `/release-notes`, `/standup`, and more
+- **3 skills** in `guardrails` — `/harden-setup`, `/hook-authoring`, `/permission-policy`
 - **6 slash commands** — `/tldr`, `/blame-why`, `/5-whys`, `/tradeoff`, `/what-changed`, `/rubber-duck`
 - **12 agents** — `code-reviewer`, `security-auditor`, `architect`, `incident-commander`, …
 - **4 output styles** — `terse`, `pair-programmer`, `teacher`, `senior-reviewer`
 
-Hooks are **not** auto-installed by the plugin (they need to run shell scripts as you, with paths that vary per machine). Use `./install.sh --hooks` and follow [HOOKS.md](HOOKS.md) to wire them up.
+Hooks are **not** auto-installed by the plugin (they need to run shell scripts as you, with paths that vary per machine). Use `./install.sh --hooks` and follow [HOOKS.md](hooks.md) to wire them up.
 
 ---
 
@@ -111,10 +112,10 @@ If your components live somewhere other than the defaults (this repo keeps every
 {
   "name": "team-power-pack",
   "version": "0.1.0",
-  "skills": "./.claude/skills/",
-  "agents": "./.claude/agents/",
+  "skills": "./plugins/team-power-pack/skills/",
+  "agents": "./plugins/team-power-pack/agents/",
   "commands": "./.claude/commands/",
-  "outputStyles": "./.claude/output-styles/"
+  "outputStyles": "./plugins/team-power-pack/output-styles/"
 }
 ```
 
@@ -166,7 +167,7 @@ Be careful here: a plugin that auto-runs shell scripts on a user's machine is a 
 
 ### Naming collisions
 
-- **Plugin skills/commands** are namespaced when they conflict with user-level ones. If both `~/.claude/commands/tldr.md` and `team-power-pack`'s `/tldr` exist, the plugin command appears as `/team-power-pack:tldr`.
+- **Plugin skills/commands** are namespaced unconditionally with user-level ones. If both `~/.claude/commands/tldr.md` and `team-power-pack`'s `/tldr` exist, the plugin command appears as `/team-power-pack:tldr`.
 - **Agents** are picked by `description` match — keep yours specific.
 
 ---
@@ -211,7 +212,7 @@ Users install via:
 - A `{ "source": "github", "repo": "owner/repo" }` object pointing at another GitHub repo
 - A Git URL
 
-This repo is itself a one-plugin marketplace — see [`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json).
+This repo is itself a one-plugin marketplace — see [`.claude-plugin/marketplace.json`](../.claude-plugin/marketplace.json).
 
 ---
 
@@ -250,6 +251,6 @@ This repo is itself a one-plugin marketplace — see [`.claude-plugin/marketplac
 
 ## Where to keep going
 
-- This repo's [CONTRIBUTING.md](CONTRIBUTING.md) — conventions for skills, agents, hooks, output styles
-- [CONCEPTS.md](CONCEPTS.md) — what each component type is for
+- This repo's [CONTRIBUTING.md](../CONTRIBUTING.md) — conventions for skills, agents, hooks, output styles
+- [CONCEPTS.md](concepts.md) — what each component type is for
 - [Anthropic plugin docs](https://docs.claude.com/en/docs/claude-code/plugins) — full schema reference and edge cases

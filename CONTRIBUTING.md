@@ -1,92 +1,126 @@
 # Contributing
 
-Thanks for considering a contribution. This repo is a curated toolkit — the bar is "would another team want to adopt this as-is?" Not every useful idea belongs here; the best additions are focused, opinionated, and self-contained.
+The bar here is different from most collections: **a guardrail that does not
+block is worse than no guardrail**, because it produces false confidence. So
+hooks need tests, and the tests assert the decision rather than the exit code.
 
 ## Before you open a PR
 
-1. **Read an existing skill or agent** in the same category. Match its tone, structure, and level of detail.
-2. **Check if your idea overlaps with something that already exists.** A refinement of an existing file is almost always better than a new one.
-3. **Keep the scope tight.** One skill, one job. If your idea has two verbs in it ("review and apply"), it's two skills.
+```bash
+bats tests/
+shellcheck -S warning -x plugins/guardrails/hooks/*.sh plugins/guardrails/hooks/lib/*.sh scripts/*.sh
+./scripts/doctor.sh .
+```
 
-## Adding a skill
+CI runs all three plus frontmatter validation, a link check, and an emoji check.
 
-A skill is a multi-step workflow Claude executes when you type `/<name>`.
-
-- Create `.claude/skills/<name>/SKILL.md`.
-- Frontmatter is mandatory. `name:` **must** match the folder name. `description:` is what Claude uses to decide when to trigger — write it as a trigger sentence, not a marketing blurb.
-- Write in second person ("you"), addressed to Claude. That's the convention.
-- Structure: short preamble → numbered steps → output format → rules/calibration.
-- End with an **artifact**. Every skill should produce something concrete (a review, a file, a checklist).
-- Don't reference internal systems, specific people, or secrets.
-
-## Adding an agent
-
-An agent is a specialist Claude can delegate to, with its own fresh context.
-
-- Create `.claude/agents/<name>.md`.
-- Frontmatter: `name`, `description` (this is what Claude uses to auto-select the agent — make it a clear trigger sentence), `tools` (comma-separated), `model` (`sonnet` or `opus`).
-- Agents should have a narrow mandate. "Reviews code" is too broad; "independent second opinion on a diff" is right.
-- Restrict `tools:` to the minimum the agent needs. A reviewer doesn't need `Write`.
+Install `bats-core`, `shellcheck`, and `jq` first (`brew install bats-core
+shellcheck jq`).
 
 ## Adding a hook
 
-Hooks are shell scripts the Claude Code harness runs on events.
+1. Put it in `plugins/guardrails/hooks/`. Name a blocking hook `guard-*.sh`.
+2. Source the shared library and use its helpers. **Do not hand-roll the decision
+   JSON** — that is how the original bug happened:
 
-- Put shell hooks in `.claude/hooks/<name>.sh` and `chmod +x` them.
-- Start with a header comment explaining: what event it hooks, what it does, and how to wire it up in `settings.json`.
-- **Safe by default.** Hooks should fail open (exit 0) rather than block work unless the whole point of the hook is to block (e.g. `block-env-writes.sh`). When blocking, exit 2 and print a clear message to stderr.
-- No network calls without opt-in.
-- No hook that modifies user files without an explicit setting to enable it.
+   ```bash
+   #!/usr/bin/env bash
+   set -uo pipefail
+   source "$(dirname "${BASH_SOURCE[0]}")/lib/common.sh"
+   require_jq
+   ```
 
-## Adding a slash command
+   `deny "reason"` blocks. `ask "reason"` prompts. `add_context "text"` injects
+   context without blocking. `warn` writes to stderr. `allow` is an explicit
+   no-op.
+3. Use `set -uo pipefail`, **not** `set -euo pipefail`. Under `set -e` a `jq`
+   filter that matches nothing aborts the hook before it reaches the decision.
+4. Fail open. If `jq` is missing or the payload is unexpected, exit 0.
+5. `chmod +x` it. A non-executable hook fails silently.
+6. Wire it in `hooks/hooks.json` with `${CLAUDE_PLUGIN_ROOT}`, never an absolute
+   path. If it should not be on by default, say why in the PR — `test-on-edit.sh`
+   is the precedent.
+7. **Write the tests.** At minimum one positive and one negative:
 
-A slash command is a short, argument-taking prompt shortcut — one-shot, not multi-step.
+   ```bash
+   @test "denies X" {
+     run -0 run_hook my-hook.sh "$(pretooluse Write '{"file_path":"/x"}')"
+     assert_denied "$output"
+   }
 
-- Put it in `.claude/commands/<name>.md`.
-- Frontmatter: `description` (one-line, shown in picker) and `argument-hint` (placeholder for the argument).
-- **If your idea is multi-step, make it a skill instead** — skills are the recommended primary mechanism for non-trivial workflows.
+   @test "allows an ordinary file" {
+     run -0 run_hook my-hook.sh "$(pretooluse Write '{"file_path":"/src/a.ts"}')"
+     assert_allowed "$output"
+   }
+   ```
 
-## Adding an output style
+   The negative test is not optional. A hook that denies everything passes every
+   deny test and makes the tool unusable.
+8. Add it to the README table and `docs/hooks.md`.
 
-- `.claude/output-styles/<name>.md`.
-- Frontmatter: `name`, `description`.
-- Keep it short — an output style is a tone preset, not a full skill.
+### deny or ask?
 
-## Style and conventions
+`deny` is for what is never intended and unrecoverable: `rm -rf /`, `mkfs`,
+`curl | sh`. `ask` is for what is legitimate but destroys work: `git reset
+--hard`, `DROP TABLE`, a production config edit.
 
-- Markdown: ATX headers (`#`), not Setext.
-- Skills and agents address Claude as "you".
-- READMEs address humans.
-- No emoji in file contents unless the user explicitly asked for them.
-- Don't commit files containing secrets, internal URLs, or company-specific content.
+Get this wrong toward `deny` and the whole plugin gets uninstalled the first
+afternoon someone needs the thing you blocked.
 
-## Testing your change
+## Adding a skill
 
-Before opening a PR:
+Default to a skill over a slash command; `commands/` is the legacy form.
 
-- [ ] **Plugin path:** load the repo with `claude --plugin-dir .` and verify your skill/agent/command/style appears.
-- [ ] **Script path:** run `./install.sh` from a clean clone and verify your skill/agent/hook installs.
-- [ ] Invoke it (`/<your-skill>`) and confirm the output matches what the SKILL.md promises.
-- [ ] If it's a hook, test both the success path and the failure path.
-- [ ] Validate `.claude-plugin/plugin.json` if you touched it: `jq . .claude-plugin/plugin.json`.
-- [ ] Run the CI checks locally if you can (`shellcheck .claude/hooks/*.sh`).
+- One skill, one job. If a request implies two, propose two skills.
+- Folder name must equal the frontmatter `name`. Lowercase and hyphenated.
+- `description` in the **third person**, naming concrete triggers: "This skill
+  should be used when the user asks to X, says Y, or types /z." This is the text
+  Claude matches against, so it is the most important line in the file.
+- Declare `allowed-tools`, scoped as narrowly as the skill allows.
+- Keep `SKILL.md` under about 2,000 words. Move templates, edge cases, and long
+  tables into `references/` — they cost no context until Claude opens them.
+- Write the body addressed to Claude, in the imperative.
+- Include runnable commands, not "grep for X". The difference between a skill and
+  an essay is whether it says what to actually run.
 
-## PR checklist
+**Do not add a skill that duplicates a first-party plugin.** Anthropic ships
+commits, code review, PR review, plugin development, and hook creation. We
+deleted our versions of all of these in 1.0.0.
 
-- [ ] New file(s) match the existing style and structure.
-- [ ] Frontmatter is correct (name matches folder, description is a trigger sentence).
-- [ ] No secrets, internal URLs, or company-specific content.
-- [ ] Added an entry to the relevant table in `README.md`.
-- [ ] If you changed plugin layout, updated `.claude-plugin/plugin.json` and bumped `version`.
-- [ ] If non-obvious: added a before/after example to `EXAMPLES.md`.
-- [ ] CI passes.
+## Adding an agent
 
-## What won't be merged
+Frontmatter: `name`, `description`, `tools`, and optionally `model`
+(`sonnet`, `opus`, `haiku`, `fable`, `inherit`, or a full model id — `inherit` is
+usually right), `color`, `disallowedTools`, `maxTurns`, `permissionMode`,
+`effort`, `memory`, `isolation`.
 
-- Skills that duplicate existing ones without meaningfully improving them.
-- Skills with vague descriptions ("helps with code").
-- Permissions in `settings.example.json` that could run destructive commands unattended.
-- Hooks that phone home or collect telemetry.
-- Additions that reference proprietary tooling only a single company uses.
+Give read-only reviewers `disallowedTools: Write, Edit, NotebookEdit` so the
+constraint is enforced rather than implied.
 
-Everything here is MIT-licensed. By contributing, you agree your contribution is as well.
+Agents run in a separate context window. That is the point: reach for one when
+you want a fresh opinion, not just to organize a prompt.
+
+## Conventions
+
+- ATX headers (`#`), not Setext.
+- Skills and agents address Claude as "you". Docs and READMEs address humans.
+- **No emoji in file contents.** CI enforces this.
+- No examples referencing secrets, internal URLs, or named individuals. This is
+  public.
+- Prefer editing an existing file to adding a new one.
+
+## Bumping versions
+
+Behavior changes bump `version` in the relevant
+`plugins/*/.claude-plugin/plugin.json` and the matching entry in
+`.claude-plugin/marketplace.json`. Keep the two in sync and add a `CHANGELOG.md`
+entry. Both manifests must be valid JSON — no trailing commas, no comments.
+
+## What will not be merged
+
+- A hook without tests.
+- A hook that blocks by exiting 1.
+- A skill duplicating a first-party plugin.
+- A permission rule that broadens `allow` to make one command work.
+- Anything that sends hook payloads off the machine. They contain file contents
+  and command strings.

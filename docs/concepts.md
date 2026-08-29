@@ -1,16 +1,16 @@
 # What the hell is a skill? (and an agent, a hook, an output style, a plugin…)
 
-Claude Code has six customization features that do different things. Most users discover them piecemeal and confuse them. Here's the clean mental model.
+Claude Code has several customization surfaces that do different things. Most people discover them piecemeal and confuse them. Here is the clean mental model.
 
 ## The 30-second version
 
 | Feature | What it is | Who triggers it | When to reach for it |
 |---|---|---|---|
-| **Skill** | A reusable prompt + multi-step process, invoked as a slash command | **You** (user) | You want a structured workflow Claude follows every time. **Recommended for new things.** |
-| **Slash command** | A one-shot prompt template invoked with `/<name> [args]`, with `$ARGUMENTS` substitution | **You** (user) | You want a quick shortcut for a single-prompt request |
+| **Skill** | A folder with a `SKILL.md`: a multi-step procedure plus optional `references/` and `scripts/` | **Claude**, by matching your request against the skill's `description` — and you, via `/<name>` | You want a workflow Claude follows every time, whether or not you remember to ask for it. **Recommended for new things.** |
+| **Slash command** | Legacy form of a skill: a single `.md` prompt template in `commands/` | **You** | Nothing new. Slash commands have merged into skills; write a skill with `disable-model-invocation: true` instead |
 | **Agent** | A specialized sub-Claude with its own system prompt and tool access | **Claude** (usually) | You want a focused second opinion, or to protect your main context window |
 | **Hook** | A shell command triggered by a Claude Code event | **Claude Code harness** | You want automation *around* Claude — format on save, block dangerous commands, notifications |
-| **Output style** | A persistent tone/behavior preset for the main Claude | **You**, via `/config` | You want to change how Claude *talks* for a while |
+| **Output style** | A persistent tone and behavior preset that replaces part of the system prompt | **You**, via `/output-style` or `/config` | You want to change how Claude *talks* for a while |
 | **MCP server** | An external process that exposes new tools to Claude | **Claude** (as tools) | You want Claude to access a system it can't reach today (GitHub, a DB, a browser) |
 | **Plugin** | A bundle of any of the above, distributed as a Git repo, installed with `/plugin install` | **You** | You want to share a curated collection across teams or machines |
 
@@ -62,41 +62,47 @@ Both are invoked with `/<name>`. The difference is structure:
 
 | | Slash command | Skill |
 |---|---|---|
-| Format | Single `.md` file in `.claude/commands/` | Folder with `SKILL.md` in `.claude/skills/` |
+| Format | Single `.md` file in `.claude/commands/` | Folder with `SKILL.md` in `plugins/team-power-pack/skills/` |
 | Takes arguments | Yes (`$ARGUMENTS`, `argument-hint:`) | Claude parses from user message |
 | Structure | One prompt | Multi-step process |
 | Good for | Quick shortcuts | Repeatable workflows |
-| Example | `/tldr src/foo.ts` | `/code-review` |
+| Example | `/tldr src/foo.ts` | `/migration-review` |
 
 **Heuristic:** start with a command. If the prompt grows steps and starts looking like a recipe, promote it to a skill.
 
-👉 **This repo's slash commands:** see the table in [README](README.md) and [COMMANDS.md](COMMANDS.md).
+👉 **This repo's slash commands:** see the table in [README](../README.md) and [COMMANDS.md](commands.md).
 
 ---
 
 ## Skills — "I want to kick off this workflow"
 
-A skill is a prompt Claude loads when you invoke it. The skill tells Claude how to approach a specific task.
+A skill is a procedure Claude loads when it becomes relevant. The `description` is what decides that: Claude reads every skill's description and loads the body when your request matches. You can also invoke one directly with `/<name>`.
 
-**Invoke with a slash command.** Type `/code-review` and Claude follows the `code-review` skill's instructions.
-
-**What they look like:**
+**What they look like** — a folder, not a file:
 
 ```
-.claude/skills/code-review/SKILL.md
+plugins/team-power-pack/skills/migration-review/
+  SKILL.md              the procedure
+  references/           detail loaded only when needed
+  scripts/              executables the skill can run
 ```
 
-Inside, frontmatter + Markdown instructions:
+That structure is the point. `SKILL.md` stays short, and long templates or edge-case detail live in `references/` where they cost no context until Claude actually opens them.
+
+Inside `SKILL.md`, frontmatter plus Markdown instructions:
 
 ```markdown
 ---
-name: code-review
-description: Review the user's pending code changes against a principled rubric.
+name: migration-review
+description: This skill should be used when the user types /migration-review,
+  is about to ship a database schema change, or asks whether a migration is
+  safe to run against production.
+allowed-tools: Read, Grep, Glob, Bash(git:*)
 ---
 
-# Code Review
+# Migration review
 
-Your job is to produce a review that a senior engineer would be glad to receive.
+Your job is to find the migrations that will lock a production table.
 
 ## Step 1 — Identify what to review
 ...
@@ -111,7 +117,7 @@ Your job is to produce a review that a senior engineer would be glad to receive.
 - One-off tasks. Just ask Claude directly.
 - Things that need to be auto-triggered on an event. That's a hook.
 
-👉 **This repo's skills:** see the Skills table in [README](README.md).
+👉 **This repo's skills:** see the Skills table in [README](../README.md).
 
 ---
 
@@ -127,7 +133,7 @@ An agent is a separate instance of Claude with its own system prompt, its own to
 **What they look like:**
 
 ```
-.claude/agents/security-auditor.md
+plugins/team-power-pack/agents/security-auditor.md
 ```
 
 ```markdown
@@ -155,7 +161,7 @@ You are a security engineer reviewing code for shippability...
 
 A skill is a recipe. An agent is a specialist. You can even use them together — a skill's instructions can say "for the security pass, delegate to the `security-auditor` agent".
 
-👉 **This repo's agents:** see the Agents table in [README](README.md).
+👉 **This repo's agents:** see the Agents table in [README](../README.md).
 
 ---
 
@@ -183,7 +189,7 @@ Hooks are shell commands the Claude Code harness runs when specific events fire.
       {
         "matcher": "Edit|Write",
         "hooks": [
-          { "type": "command", "command": "/Users/you/.claude/hooks/format-on-edit.sh" }
+          { "type": "command", "command": "/Users/you/plugins/guardrails/hooks/format-on-edit.sh" }
         ]
       }
     ]
@@ -202,7 +208,7 @@ Hooks are shell commands the Claude Code harness runs when specific events fire.
 - Changing how Claude *talks*. That's an output style.
 - Giving Claude new capabilities. That's an MCP server.
 
-👉 **This repo's hooks:** see [HOOKS.md](HOOKS.md).
+👉 **This repo's hooks:** see [HOOKS.md](hooks.md).
 
 ---
 
@@ -234,9 +240,9 @@ You are in terse mode. No preamble. ≤ 2 sentences before tool calls. No traili
 **Skill vs. output style:**
 > A **skill** changes what Claude *does*. An **output style** changes how Claude *talks*.
 
-You can combine them: activate the `senior-reviewer` style, then run `/code-review` — you get the rigorous review process *and* the adversarial tone.
+You can combine them: activate the `senior-reviewer` style, then run `/migration-review` — you get the rigorous review process *and* the adversarial tone.
 
-👉 **This repo's styles:** see [OUTPUT-STYLES.md](OUTPUT-STYLES.md).
+👉 **This repo's styles:** see [OUTPUT-STYLES.md](output-styles.md).
 
 ---
 
@@ -246,15 +252,21 @@ MCP (Model Context Protocol) servers are external processes that expose tools to
 
 Example: the GitHub MCP server exposes tools like `github.create_issue`, `github.list_prs`. Claude can call them the same way it calls `Bash` or `Read`.
 
-**Configured in `settings.json`:**
+**Configured in `.mcp.json` at the repo root** (project scope), or through
+`claude mcp add` (user scope, stored in `~/.claude.json`). **Not in
+`settings.json`** — an `mcpServers` key there is silently ignored.
 
 ```json
 {
   "mcpServers": {
-    "github": {
+    "example-remote": {
+      "type": "http",
+      "url": "https://mcp.example.com/mcp"
+    },
+    "example-local": {
       "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-github"],
-      "env": { "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}" }
+      "args": ["-y", "@example/mcp-server"],
+      "env": { "API_KEY": "${EXAMPLE_TOKEN}" }
     }
   }
 }
@@ -264,7 +276,7 @@ Example: the GitHub MCP server exposes tools like `github.create_issue`, `github
 - Claude needs to talk to a system beyond your local machine (GitHub, Linear, Sentry, Slack, a database)
 - You want structured, typed tool access instead of shelling out through `Bash`
 
-👉 **This repo's curated MCP list:** see [MCP.md](MCP.md).
+See [mcp.md](mcp.md) for the CLI, transports, plugin bundling, and why this repo does not ship a curated server list.
 
 ---
 
@@ -287,9 +299,9 @@ A plugin is a Git repo with `.claude-plugin/plugin.json` declaring a bundle of s
 **What plugins are NOT:**
 - A different *kind* of feature. A plugin is a *delivery vehicle* for the features you already understand. There's no such thing as "plugin code" — there's a skill, agent, hook, etc., that happens to live inside a plugin.
 
-**This repo is itself a plugin** — see [`.claude-plugin/plugin.json`](.claude-plugin/plugin.json) and [`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json). Either install it (instructions in [PLUGINS.md](PLUGINS.md)) or use the layout as a template for your own.
+**This repo is a marketplace shipping two plugins** — see [`.claude-plugin/marketplace.json`](../.claude-plugin/marketplace.json), and the per-plugin manifests at [`plugins/guardrails/.claude-plugin/plugin.json`](../plugins/guardrails/.claude-plugin/plugin.json) and [`plugins/team-power-pack/.claude-plugin/plugin.json`](../plugins/team-power-pack/.claude-plugin/plugin.json). Either install it (see [install.md](install.md)) or use the layout as a template for your own.
 
-👉 **Full plugin guide:** see [PLUGINS.md](PLUGINS.md).
+👉 **Full plugin guide:** see [PLUGINS.md](plugins.md).
 
 ---
 
@@ -298,32 +310,40 @@ A plugin is a Git repo with `.claude-plugin/plugin.json` declaring a bundle of s
 These features work together. A realistic setup:
 
 - **Output style** `terse` active — Claude is concise by default
-- **Skills** `/code-review`, `/commit`, `/standup` ready to invoke
+- **Skills** `/migration-review`, `/release-notes`, `/standup` ready to invoke
 - **Agents** `security-auditor`, `architect` available — Claude delegates to them when relevant
 - **Hooks**: `format-on-edit.sh` formats every file Claude edits; `block-force-push.sh` protects your remote; `notify-on-idle.sh` pings your desktop when Claude needs input
 - **MCP servers** for GitHub + Sentry so Claude can read issues and error events directly
 
-That's the whole Claude Code extensibility surface. Six features. Each does one thing well — and plugins exist to ship any combination of the others as a single unit.
+Those are the surfaces this repository ships. They are not the whole picture. Also worth knowing:
+
+- **`CLAUDE.md`** — memory files loaded into every session, with `@import` syntax and an enterprise / project / user hierarchy. The highest-leverage customization there is, and the cheapest.
+- **`settings.json` permissions** — `allow`, `ask`, and `deny` rules plus permission modes. Deny beats allow, and project settings beat user settings. See [settings.md](settings.md).
+- **Status line** — a script that renders the bar under your prompt. This repo ships one in `plugins/team-power-pack/statusline/`.
+- **Sandboxing** — filesystem and network isolation configured under `sandbox` in `settings.json`.
+- **The `SlashCommand` tool** — lets Claude invoke your commands itself rather than waiting for you to type them.
+
+Plugins exist to ship any combination of these as a single installable unit.
 
 ## How to invoke each one (the exact mechanics)
 
-Most of the confusion in this repo comes from the naming: `/code-review` (skill) and `code-reviewer` (agent) sound alike but are invoked differently. Here's the definitive table:
+Most of the confusion in this repo comes from the naming: `/migration-review` (skill) and `sql-reviewer` (agent) sound alike but are invoked differently. Here's the definitive table:
 
 | Feature | Invocation | Who does the work | Context |
 |---|---|---|---|
 | **Slash command** | Type `/name [args]` — e.g. `/tldr src/foo.ts` | Main Claude in your current chat | Same as your conversation |
-| **Skill** | Type `/name` — e.g. `/code-review` | Main Claude in your current chat | Same as your conversation |
-| **Agent** | Ask by name — e.g. "use the code-reviewer agent" or "@code-reviewer" | A separate sub-Claude spawned for this task | Fresh, isolated — doesn't see your prior chat |
+| **Skill** | Type `/name` — e.g. `/migration-review` | Main Claude in your current chat | Same as your conversation |
+| **Agent** | Ask by name — e.g. "use the code-reviewer agent" or "@agent-code-reviewer" | A separate sub-Claude spawned for this task | Fresh, isolated — doesn't see your prior chat |
 | **Output style** | `/config` → pick one | Main Claude, but voice/tone changed | Same conversation, different instructions on top |
 | **Hook** | Triggered automatically by Claude Code events | Not Claude — a shell script you wrote | N/A (runs outside the conversation) |
 | **Plugin** | `/plugin install <name>@<marketplace>` (one-time) | N/A — installs other components | N/A |
 
-### `/code-review` vs. `code-reviewer` — worked example
+### `/migration-review` vs. `sql-reviewer` — worked example
 
 ```
-You: /code-review
+You: /migration-review
 ```
-→ Main Claude reads `.claude/skills/code-review/SKILL.md` and follows its process. The review is produced inline, in your current conversation. Cheap, fast, same context.
+→ Main Claude reads `plugins/team-power-pack/skills/migration-review/SKILL.md` and follows its process. The review is produced inline, in your current conversation. Cheap, fast, same context.
 
 ```
 You: Use the code-reviewer agent to look at my staged changes.
@@ -335,7 +355,7 @@ You: Use the code-reviewer agent to look at my staged changes.
 - **Skill** when you just want a review, any time. Works well when starting fresh.
 - **Agent** when you've been deep in the code and want a *fresh-eyes* pass that won't be biased by whatever you just argued into existence with main Claude. Or when you want to keep the noisy review output out of your primary context.
 
-**They compose.** A skill can delegate sub-tasks to an agent. `/code-review` can internally say "for the security pass, delegate to the `security-auditor` agent." Skills drive the workflow; agents provide specialist, isolated second-opinion work.
+**They compose.** A skill can delegate sub-tasks to an agent. `/migration-review` can internally say "for the query-plan pass, delegate to the `sql-reviewer` agent." Skills drive the workflow; agents provide specialist, isolated second-opinion work.
 
 ### Naming agents explicitly vs. auto-delegation
 
@@ -348,8 +368,8 @@ If auto-delegation misses, just name the agent — "use the X agent on this" is 
 
 ## Common confusions
 
-- **"Command or skill?"** — One prompt with args? Slash command. Multi-step process? Skill. Default to a skill for new things.
-- **"Skill or agent?"** — Does the user invoke it directly (`/name`)? Skill (or command). Does Claude decide when to use it? Agent.
+- **"Command or skill?"** — Write a skill. Slash commands are the legacy form and have merged into skills; a skill with `disable-model-invocation: true` behaves exactly like the old command form, and gains frontmatter, bundled references, and scripts.
+- **"Skill or agent?"** — Not about who invokes it: Claude decides when to use a *skill* too, by matching your request against its `description`. The real difference is context. A skill runs **in your conversation**, using your context and adding to it. An agent runs in a **separate context window** and reports back a result. Reach for an agent when you want a fresh pair of eyes, or when the work would flood your main context.
 - **"Should I use a hook or a skill for X?"** — Does the user need to ask for it every time? Skill. Does it need to happen automatically, without Claude even knowing? Hook.
 - **"What's the difference between an output style and a skill?"** — Style = how Claude talks. Skill = what Claude does. They stack.
 - **"Does an agent replace the main Claude?"** — No. The main Claude delegates *to* the agent, reads its result, and continues the conversation with you.

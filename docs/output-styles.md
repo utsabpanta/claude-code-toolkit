@@ -15,10 +15,10 @@ Most people have no idea this exists. It's one of the biggest ergonomics wins in
 
 | Style | Best for |
 |---|---|
-| [`terse`](.claude/output-styles/terse.md) | You know what you want. Skip the explanation. |
-| [`pair-programmer`](.claude/output-styles/pair-programmer.md) | Exploring a problem together; want Claude to narrate its thinking |
-| [`teacher`](.claude/output-styles/teacher.md) | Learning an unfamiliar codebase, language, or pattern |
-| [`senior-reviewer`](.claude/output-styles/senior-reviewer.md) | Stress-testing a design or piece of code before you commit |
+| [`terse`](../plugins/team-power-pack/output-styles/terse.md) | You know what you want. Skip the explanation. |
+| [`pair-programmer`](../plugins/team-power-pack/output-styles/pair-programmer.md) | Exploring a problem together; want Claude to narrate its thinking |
+| [`teacher`](../plugins/team-power-pack/output-styles/teacher.md) | Learning an unfamiliar codebase, language, or pattern |
+| [`senior-reviewer`](../plugins/team-power-pack/output-styles/senior-reviewer.md) | Stress-testing a design or piece of code before you commit |
 
 ## Install
 
@@ -26,7 +26,7 @@ Copy the files into your user-level output styles folder:
 
 ```bash
 mkdir -p ~/.claude/output-styles
-cp .claude/output-styles/*.md ~/.claude/output-styles/
+cp plugins/team-power-pack/output-styles/*.md ~/plugins/team-power-pack/output-styles/
 ```
 
 Or let the installer do it:
@@ -57,7 +57,7 @@ This opens the settings menu. Find "Output Style" and pick from the list (your c
 
 Setting sticks across sessions. Remove the key (or set it to `"default"`) to go back.
 
-> **Note:** The old `/output-style <name>` slash command was deprecated in a recent Claude Code release. Use `/config` or `settings.json` instead.
+> **Note:** `/output-style <name>` switches styles, `/output-style:new` creates one, and `/config` exposes the same setting. Output styles are current, not deprecated.
 
 ## How to write your own
 
@@ -73,7 +73,7 @@ Instructions that get prepended as system prompt.
 Address Claude in second person ("you").
 ```
 
-Save to `~/.claude/output-styles/my-style.md`. It appears in the `/config` menu immediately — no restart needed.
+Save to `~/plugins/team-power-pack/output-styles/my-style.md`. It appears in the `/config` menu immediately — no restart needed.
 
 ## Style-writing tips
 
